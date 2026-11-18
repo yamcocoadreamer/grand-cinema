@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 type Movie = {
   id: string;
@@ -48,9 +49,7 @@ export default function FilmsPage() {
         <h1 className="mb-3 text-4xl font-bold">
           À l'affiche
         </h1>
-        <h1 className="mb-3 bg-red-600 p-6 text-4xl font-bold">
-  À l'affiche
-</h1>
+        
         <p className="mb-10 text-zinc-400">
           Découvrez les films proposés par La Grande Cinéma.
         </p>
@@ -89,9 +88,13 @@ export default function FilmsPage() {
                 </div>
 
                 <div className="p-5">
-                  <h2 className="mb-2 text-xl font-semibold">
-                    {movie.title}
-                  </h2>
+                  
+                    <h2 className="mb-2 text-xl font-semibold">
+                        <Link href={`/films/${movie.id}`} className="hover:text-red-400 hover:underline">
+                            {movie.title}
+                        </Link>
+                    </h2>
+
 
                   <p className="mb-3 text-sm text-red-400">
                     {movie.genre ?? "Genre non renseigné"}
