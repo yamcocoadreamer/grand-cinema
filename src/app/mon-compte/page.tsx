@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import MesReservations from "./MesReservations";
 
 export default function MonComptePage() {
   const router = useRouter();
@@ -50,6 +51,8 @@ export default function MonComptePage() {
       <p className="mt-5">
         Connecté avec : <strong>{email}</strong>
       </p>
+
+      <MesReservations />
 
       <p className="mt-3">
         Bienvenue sur La Grande Cinéma !

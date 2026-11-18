@@ -303,9 +303,14 @@ function MovieDetailsContent() {
                               {formattedPrice}
                             </p>
 
-                            <span className="inline-block rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white">
-                              Réservation à venir
-                            </span>
+                            
+                            <Link
+                                href={`/reservation/${screening.id}`}
+                                className="inline-block rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                            >
+                                Réserver
+                            </Link>
+
                           </div>
                         </article>
                       );
