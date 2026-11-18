@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -22,14 +22,33 @@ type Screening = {
   room_name: string;
 };
 
+// Composant principal
 export default function MovieDetailsPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
+          <p className="text-zinc-400">
+            Chargement du film...
+          </p>
+        </main>
+      }
+    >
+      <MovieDetailsContent />
+    </Suspense>
+  );
+}
+
+// Composant contenant la logique du film
+function MovieDetailsContent() {
   const params = useParams<{ id: string }>();
 
   const [movie, setMovie] = useState<Movie | null>(null);
   const [screenings, setScreenings] = useState<Screening[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [screeningsError, setScreeningsError] = useState<string | null>(null);
+  const [screeningsError, setScreeningsError] =
+    useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -43,74 +62,104 @@ export default function MovieDetailsPage() {
 
       const supabase = createClient();
 
-      const { data, error: movieError } = await supabase
-        .from("movies")
-        .select(
-          "id, title, description, duration_minutes, genre, poster_url"
-        )
-        .eq("id", params.id)
-        .eq("is_published", true)
-        .maybeSingle();
+      try {
+        // Récupération du film
+        const { data, error: movieError } = await supabase
+          .from("movies")
+          .select(
+            "id, title, description, duration_minutes, genre, poster_url"
+          )
+          .eq("id", params.id)
+          .eq("is_published", true)
+          .maybeSingle();
 
-      if (!active) return;
+        if (!active) return;
 
-      if (movieError) {
-        setError("Impossible de charger ce film.");
-        setLoading(false);
-        return;
+        if (movieError) {
+          setError("Impossible de charger ce film.");
+          return;
+        }
+
+        if (!data) {
+          setError("Ce film est introuvable.");
+          return;
+        }
+
+        setMovie(data);
+
+        // Récupération des séances
+        const { data: sessions, error: sessionError } =
+          await supabase
+            .from("screenings")
+            .select(`
+              id,
+              starts_at,
+              ticket_price,
+              rooms (
+                name
+              )
+            `)
+            .eq("movie_id", params.id)
+            .eq("status", "scheduled")
+            .gte("starts_at", new Date().toISOString())
+            .order("starts_at", { ascending: true });
+
+        if (!active) return;
+
+        if (sessionError) {
+          setScreeningsError(
+            "Impossible de charger les séances."
+          );
+        } else {
+          const formattedScreenings: Screening[] =
+            (sessions ?? []).map((session) => {
+              // Normalisation du type retourné par Supabase
+              const room: unknown = session.rooms;
+
+              let roomName = "Salle à confirmer";
+
+              if (
+                room !== null &&
+                typeof room === "object" &&
+                !Array.isArray(room) &&
+                "name" in room &&
+                typeof room.name === "string"
+              ) {
+                roomName = room.name;
+              } else if (Array.isArray(room)) {
+                const firstRoom: unknown = room[0];
+
+                if (
+                  firstRoom !== null &&
+                  typeof firstRoom === "object" &&
+                  "name" in firstRoom &&
+                  typeof firstRoom.name === "string"
+                ) {
+                  roomName = firstRoom.name;
+                }
+              }
+
+              return {
+                id: session.id,
+                starts_at: session.starts_at,
+                ticket_price: Number(session.ticket_price),
+                room_name: roomName,
+              };
+            });
+
+          setScreenings(formattedScreenings);
+        }
+      } catch {
+        if (active) {
+          setError(
+            "Une erreur est survenue lors du chargement."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
-
-      if (!data) {
-        setError("Ce film est introuvable.");
-        setLoading(false);
-        return;
-      }
-
-      setMovie(data);
-
-      const { data: sessions, error: sessionError } =
-        await supabase
-          .from("screenings")
-          .select(`
-            id,
-            starts_at,
-            ticket_price,
-            rooms (
-              name
-            )
-          `)
-          .eq("movie_id", params.id)
-          .eq("status", "scheduled")
-          .gte("starts_at", new Date().toISOString())
-          .order("starts_at", { ascending: true });
-
-      if (!active) return;
-
-      if (sessionError) {
-        setScreeningsError(
-          "Impossible de charger les séances."
-        );
-      } else {
-        const formattedScreenings: Screening[] =
-          (sessions ?? []).map((session) => {
-            const room = session.rooms;
-
-            const roomName = Array.isArray(room)
-              ? room[0]?.name
-              : room?.name;
-
-            return {
-              id: session.id,
-              starts_at: session.starts_at,
-              ticket_price: Number(session.ticket_price),
-              room_name: roomName ?? "Salle à confirmer",
-            };
-          });
-
-        setScreenings(formattedScreenings);
-      }
-
-      setLoading(false);
     }
 
     if (params.id) {
@@ -144,7 +193,7 @@ export default function MovieDetailsPage() {
           </p>
         )}
 
-        {!loading && movie && (
+        {!loading && !error && movie && (
           <div className="grid gap-8 md:grid-cols-[280px_1fr]">
             {/* Affiche du film */}
             <div className="flex min-h-96 items-center justify-center overflow-hidden rounded-xl bg-zinc-800">
