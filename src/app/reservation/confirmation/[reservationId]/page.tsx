@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import PayButton from "./PayButton";
 
 export const instant = false;
 
@@ -78,7 +79,7 @@ export default async function ConfirmationPage({
   const { data: reservation, error: reservationError } =
     await supabase
       .from("reservations")
-      .select("id, status, created_at, screening_id, room_id")
+      .select("id, status, created_at, expires_at, screening_id, room_id")
       .eq("id", reservationId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -99,6 +100,25 @@ export default async function ConfirmationPage({
       </main>
     );
   }
+
+
+  // Récupérer le paiement associé à la réservation
+  const { data: payment, error: paymentError } =
+    await supabase
+      .from("payments")
+      .select("status, amount, currency")
+      .eq("reservation_id", reservation.id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+  if (paymentError) {
+    console.error(
+      "Impossible de récupérer le paiement :",
+      paymentError.message
+    );
+  }
+
 
   // Récupérer la séance, le film et la salle
   const { data: screening, error: screeningError } =
@@ -201,12 +221,48 @@ export default async function ConfirmationPage({
       currency: "EUR",
     });
 
+
+  const paymentStatusLabel =
+    paymentError
+      ? "Information indisponible"
+      : !payment
+        ? "Aucun paiement enregistré"
+        : payment.status === "paid"
+          ? "Paiement validé"
+          : payment.status === "pending"
+            ? "Paiement en attente"
+            : payment.status === "refund_required"
+              ? "Remboursement nécessaire"
+              : payment.status === "refunded"
+                ? "Remboursé"
+                : "Paiement échoué";
+
+
+
+  const isExpired =
+    reservation.status === "pending" &&
+    reservation.expires_at !== null &&
+    new Date(reservation.expires_at).getTime() <= Date.now();
+
+
+  const isPaymentValidated =
+    !paymentError &&
+    payment?.status === "paid";
+
+  const isBookingFullyConfirmed =
+    reservation.status === "confirmed" &&
+    isPaymentValidated;
+
   const statusLabel =
-    reservation.status === "pending"
-      ? "En attente"
-      : reservation.status === "confirmed"
-        ? "Confirmée"
+    isBookingFullyConfirmed
+      ? "Confirmée"
+      : reservation.status === "pending"
+        ? isExpired
+          ? "Expirée"
+          : "En attente de paiement"
         : "Annulée";
+
+
 
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
@@ -247,7 +303,7 @@ export default async function ConfirmationPage({
               className={`mt-1 font-semibold ${
                 reservation.status === "confirmed"
                   ? "text-green-400"
-                  : reservation.status === "cancelled"
+                  : reservation.status === "cancelled"|| isExpired
                     ? "text-red-400"
                     : "text-yellow-400"
               }`}
@@ -297,11 +353,54 @@ export default async function ConfirmationPage({
           </div>
         </div>
 
-        <p className="mt-6 text-sm text-zinc-400">
-          Aucun paiement n'a encore été effectué.
-          Cette réservation ne constitue pas un billet
-          de cinéma définitif.
-        </p>
+        
+
+<p className="mt-6 text-sm text-zinc-400">
+  {isBookingFullyConfirmed
+    ? "Votre réservation et votre paiement sont confirmés. Vos billets électroniques seront disponibles après leur génération."
+    : reservation.status === "confirmed"
+      ? "Votre réservation est enregistrée. La validation du paiement est en cours de vérification."
+      : isExpired
+        ? "Le délai de réservation de 15 minutes est dépassé. Vos places ne sont plus garanties. Si un paiement a été effectué, son traitement sera vérifié."
+        : reservation.status === "pending"
+          ? "Votre réservation est en attente de paiement. Aucun billet définitif n'a encore été délivré."
+          : "Cette réservation est annulée et ne donne accès à aucun billet."}
+</p>
+
+
+
+          <div className="border-t border-zinc-700 pt-5">
+            <p className="text-sm text-zinc-400">
+              Statut du paiement
+            </p>
+
+            <p className="mt-1 font-semibold">
+              {paymentStatusLabel}
+            </p>
+
+            {payment && !paymentError && (
+              <p className="mt-2 text-sm text-zinc-300">
+                Montant enregistré :{" "}
+                {new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: payment.currency?.toUpperCase() || "EUR",
+                }).format(Number(payment.amount))}
+              </p>
+            )}
+          </div>
+
+
+        {reservation.status === "pending" &&
+          !isExpired &&
+          !paymentError &&
+          (!payment ||
+            payment.status === "pending") && (
+            <PayButton
+              reservationId={reservation.id}
+              amount={total}
+            />
+          )}
+
 
         <div className="mt-8 flex flex-wrap gap-4">
           <Link
