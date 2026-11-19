@@ -1,69 +1,66 @@
-import Image from "next/image";
 
-export default function Home() {
+import Link from "next/link";
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="min-h-screen bg-zinc-950 text-white">
+      <header className="border-b border-zinc-800 px-6 py-5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
+          <Link
+            href="/"
+            className="text-2xl font-bold text-red-500"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            LE GRAND CINÉMA
+          </Link>
+
+          <nav className="flex flex-wrap gap-4 text-sm">
+            <Link href="/films" className="hover:text-red-400">
+              Films
+            </Link>
+            <Link href="/mon-compte" className="hover:text-red-400">
+              Mon compte
+            </Link>
+            <Link href="/connexion" className="hover:text-red-400">
+              Connexion
+            </Link>
+          </nav>
         </div>
-      </main>
-    </div>
+      </header>
+
+      <section className="mx-auto max-w-5xl px-6 py-24 text-center">
+        <p className="mb-4 font-semibold uppercase tracking-widest text-red-500">
+          Bienvenue au Grand Cinéma
+        </p>
+
+        <h1 className="text-4xl font-extrabold md:text-6xl">
+          Vivez le cinéma autrement
+        </h1>
+
+        <p className="mx-auto mt-6 max-w-2xl text-lg text-zinc-300">
+          Découvrez les films à l'affiche, choisissez votre
+          séance et réservez vos places en ligne.
+        </p>
+
+        <div className="mt-10 flex flex-wrap justify-center gap-4">
+          <Link
+            href="/films"
+            className="rounded-lg bg-red-700 px-8 py-4 font-semibold hover:bg-red-600"
+          >
+            Voir les films
+          </Link>
+
+          <Link
+            href="/mon-compte"
+            className="rounded-lg border border-zinc-600 px-8 py-4 font-semibold hover:bg-zinc-800"
+          >
+            Mes réservations
+          </Link>
+        </div>
+      </section>
+
+      <footer className="border-t border-zinc-800 px-6 py-6 text-center text-sm text-zinc-500">
+        Le Grand Cinéma — Projet de réservation en ligne
+      </footer>
+    </main>
   );
 }
